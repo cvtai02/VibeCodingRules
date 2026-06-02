@@ -1,8 +1,10 @@
-I need these features for my new project:
-<your feature here>
+Step:
+1. Ask me for project name.
+2. Ask me for project features
 
+3. Suggest and ask for tech stack.
+4. Ask any other question.
 
-read https://cvtai02.github.io/VibeCodingRules/AnyProjectRules.md
+5. fetch and read https://cvtai02.github.io/VibeCodingRules/AnyProjectRules.md. Dont read the cache 
 
-Suggest and ask for tech stack. Suggest and ask for domain separation. ask any question.
-Eventually give me downloadable markdown plan that will be used by codex/claude to setup the project.
+6. Eventually give me downloadable markdown plan that will be used by codex/claude to setup the project.

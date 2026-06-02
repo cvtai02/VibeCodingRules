@@ -3,7 +3,7 @@ Refine this to a  markdown file:
 ### Any Project rules:
 - Project contain: 
 	1. app: main bussiness source code that expose apis
-	2. ui: admin for interact with app api, configure app settings, use accesstoken for login.
+	2. ui: admin for interact with app api, configure app settings, use accesstoken in early login.
 	3. handoffs: backend handoff updated api for ui, ui handoff needed api changes.
 	2. api-clients: api-clients writen in typescript. (interface + implementation). so that i can copy this to any other app to use, or i can push to npm-packages
 	3. api-mpc-server: can be used for create mock data, fix dirty data, smoke test, ...
@@ -25,6 +25,7 @@ Refine this to a  markdown file:
 	- Api Layer
 	- Dtos should be used by both API and Usecases. both use the same dto.
 	- All dto file directory should use the same pattern for searching
+	*Folder structure and name can be different base on techstack*
 
 - API Clients: 
 	- Api dto is sync from App

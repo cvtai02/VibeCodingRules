@@ -1,417 +1,245 @@
-# Project Rules & Architecture Standards
+# Project Rules
 
-## Project Structure
+## 1. Project Structure
 
-Every project must contain the following top-level folders and files:
+Every project should follow this root structure:
 
 ```text
-/
+project-root/
 ├── app/
 ├── ui/
-├── api-clients/
-├── api-mcp-server/
 ├── handoffs/
 │   └── archive/
+├── api-clients/
+├── api-mcp-server/
 ├── index.md
 ├── rules.md
-└── agents/
+└── agents-instructions.md
 ```
 
-### Folder Responsibilities
+### Root folders and files
 
-| Folder           | Purpose                                                                                                                                       |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app`            | Main business application. Exposes APIs and contains all business logic.                                                                      |
-| `ui`             | Administrative interface used to interact with App APIs, manage settings, and authenticate using access tokens.                               |
-| `api-clients`    | Reusable TypeScript API client package containing DTOs, interfaces, and implementations. Can be copied to other projects or published to npm. |
-| `api-mcp-server` | Utilities for mock data generation, dirty data cleanup, smoke testing, diagnostics, and automation tasks.                                     |
-| `handoffs`       | Temporary coordination documents between backend and UI teams.                                                                                |
-| `index.md`       | Project navigation and architecture index.                                                                                                    |
-| `rules.md`       | Project-wide implementation standards and architecture rules.                                                                                 |
-| `agents`         | AI-agent instructions, skills, workflows, and operating guidelines.                                                                           |
+| Path                     | Purpose                                                                                                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                   | Main business source code. Exposes the application APIs.                                                                                                               |
+| `ui/`                    | Admin interface for interacting with the app API, configuring app settings, and using access tokens during early login flows.                                          |
+| `handoffs/`              | Temporary coordination documents between backend and UI work. Backend handoffs describe updated APIs for UI. UI handoffs describe required backend API changes.        |
+| `handoffs/archive/`      | Completed handoff documents.                                                                                                                                           |
+| `api-clients/`           | TypeScript API clients containing interfaces and implementations. These clients should be portable so they can be copied into other apps or published as npm packages. |
+| `api-mcp-server/`        | MCP server for creating mock data, fixing dirty data, smoke testing, and other local automation tasks.                                                                 |
+| `index.md`               | Root index explaining each top-level folder and how to navigate the project.                                                                                           |
+| `rules.md`               | Root project rules.                                                                                                                                                    |
+| `agents-instructions.md` | Instructions for AI agents working in this project.                                                                                                                    |
 
----
+## 2. Application Rules
 
-# Application Architecture Rules
+### 2.1 Settings
 
-## Configuration Management
+All runtime settings must be stored in a JSON configuration file so they can be viewed and updated from the UI.
 
-All runtime settings must be stored in a JSON configuration file.
-
-Examples:
+Examples of settings include:
 
 * Access tokens
-* Database settings
-* External API credentials
-* Storage provider settings
+* Database configuration
+* External API configuration
+* Storage configuration
 * Feature flags
+* Environment-specific settings
 
-Requirements:
+The settings JSON file must be included in `.gitignore`.
 
-* Configuration must be editable from the UI.
-* Configuration must be reloadable without code changes.
-* Application reset functionality may recreate this file if needed.
-* Configuration files **must be excluded from source control** via `.gitignore`.
+If settings are changed through the UI, the app may require a reset or restart for those settings to take effect.
 
----
+### 2.2 Architecture
 
-## Dependency Management
+Do not add a repository layer or an abstract layer on top of the ORM.
 
-* Use Dependency Injection whenever practical.
-* Dependencies should be resolved through contracts/interfaces defined in Core.
-* Avoid direct infrastructure dependencies inside Use Cases.
+The ORM context belongs in the application core. Use cases may depend directly on the ORM context.
 
----
+Use dependency injection whenever possible.
 
-## Architecture Layers
+Follow the naming conventions of the selected technology stack.
+
+### 2.3 Modules
+
+The app should be modularized properly. Each module should contain:
 
 ```text
-app/
-├── Core/
-├── Infrastructure/
-├── UseCases/
-├── Api/
-└── Dtos/
+module-name/
+├── usecases/
+├── api/              # or controllers/, depending on the stack convention
+└── dtos/
 ```
 
-### Core Layer
+Module rules:
 
-The Core layer contains:
+* Use cases contain business actions and application logic.
+* API/controllers expose use cases through HTTP or another API boundary.
+* DTOs must be shared by both API/controllers and use cases.
+* API/controllers and use cases should use the same DTO definitions.
+* All DTO directories must follow the same naming and path pattern so agents and developers can search them reliably.
 
-* Entities
-* Aggregates
-* Value Objects
+### 2.4 Core / Shared Kernel
+
+The app must include a core or shared kernel area for definitions used across modules.
+
+The shared kernel may contain:
+
 * Enums
 * Constants
 * Policies
-* Contracts / Interfaces
-* Domain Services
+* Shared value objects
+* Shared types
+* Infrastructure abstractions/contracts
+* Cross-module domain concepts
 
-#### Entity Rules
+Shared kernel code should remain stable, intentional, and broadly reusable.
 
-Entities must enforce their own invariants.
+### 2.5 Entities and Aggregates
 
-Use:
+Entity classes must define and protect the constraints of that entity.
 
-* Private setters
-* Encapsulated state changes
-* Domain methods
+Use public and private properties/methods properly so invalid state cannot be created or persisted accidentally.
 
-Avoid:
+Aggregates must define and protect constraints involving relationships between multiple entities.
 
-* Public mutable properties
-* Anemic domain models
+Persist this instruction in the project documentation so agents preserve these rules during implementation.
 
-#### Aggregate Rules
+### 2.6 Infrastructure
 
-Aggregates are responsible for enforcing constraints spanning multiple entities.
+Infrastructure code is responsible for external services and adapters.
 
-Examples:
+Examples include:
 
-* Ownership rules
-* Membership limits
-* Referential consistency
-* Business transaction boundaries
+* Database configuration
+* Storage services
+* External API clients
+* File systems
+* Message queues
+* Email providers
+* Cache providers
 
----
+Infrastructure implementations must implement abstractions/contracts defined in the core or shared kernel.
 
-### Infrastructure Layer
-
-Infrastructure implements contracts defined by Core.
-
-Examples:
-
-* Database providers
-* Storage providers
-* External APIs
-* Authentication providers
-* Messaging systems
-
-Requirements:
-
-* Infrastructure implementations must be swappable.
-* Provider selection should be configurable through application settings.
+All infrastructure should be adapter-based so implementations can be replaced.
 
 Examples:
 
-* SQLite ↔ PostgreSQL
-* R2 ↔ Google Drive
-* Local Storage ↔ S3
+* SQLite adapter / PostgreSQL adapter
+* R2 adapter / Google Drive adapter
+* Local file storage adapter / cloud storage adapter
 
----
+## 3. API Clients
 
-### ORM Rules
+The `api-clients/` package contains TypeScript API clients.
 
-Repository patterns are prohibited.
+Rules:
 
-Do not create:
+* API DTOs must be synced from `app/`.
+* Clients must use native `fetch`.
+* Clients should include both interfaces and implementations.
+* Clients should be portable enough to copy into another app.
+* Clients should be publishable as npm packages when needed.
 
-```text
-Repository
-GenericRepository
-UnitOfWork
-DataAccessLayer
-```
-
-Instead:
-
-* ORM context belongs directly in Core.
-* Use Cases may depend directly on ORM context abstractions.
-* Avoid unnecessary abstraction layers above the ORM.
-
----
-
-### Use Cases Layer
-
-The Use Cases layer contains application workflows and business operations.
-
-Responsibilities:
-
-* Execute business logic.
-* Coordinate entities and aggregates.
-* Access infrastructure through contracts.
-* Return DTOs.
-
----
-
-### API Layer
-
-Responsibilities:
-
-* HTTP endpoints
-* Request validation
-* Authentication
-* DTO mapping
-
-The API layer must not contain business logic.
-
----
-
-### DTO Rules
-
-DTOs are shared between:
-
-* API Layer
-* Use Cases Layer
-
-Requirements:
-
-* Single source of truth.
-* Consistent folder structure.
-* Predictable naming conventions.
-* Easy discovery through search.
-
-Example:
-
-```text
-Dtos/
-├── Users/
-├── Orders/
-└── Settings/
-```
-
----
-
-# API Client Rules
-
-## Synchronization
-
-API DTOs must be synchronized from the App project.
-
-The App project is the source of truth.
-
----
-
-## Implementation
-
-Requirements:
-
-* TypeScript only.
-* Use native `fetch`.
-* No external HTTP client dependencies unless explicitly approved.
-
-Generated package should contain:
+Recommended structure:
 
 ```text
 api-clients/
-├── dtos/
-├── interfaces/
-├── implementations/
-└── index.ts
-```
-
----
-
-# Documentation Standards
-
-Documentation exists primarily to support AI agents and developers.
-
----
-
-## Project-Level Documentation
-
-Required:
-
-```text
-/
+├── src/
+│   ├── dtos/
+│   ├── interfaces/
+│   ├── clients/
+│   └── index.ts
+├── package.json
+├── tsconfig.json
 ├── index.md
 └── rules.md
 ```
 
-### index.md
+## 4. Documentation for AI Agents
 
-Purpose:
+Documentation must be created so AI agents can search, understand, and safely modify the project.
 
-* Project navigation
-* Architecture overview
-* Folder discovery
-* Search entry point
+### 4.1 Required documentation in `app/`
 
-### rules.md
-
-Purpose:
-
-* Implementation rules
-* Coding standards
-* Architectural constraints
-
----
-
-## Layer-Level Documentation
-
-Every layer root must contain:
+The `app/` folder must include:
 
 ```text
-Layer/
+app/
 ├── index.md
 └── rules.md
 ```
 
-### Layer index.md
+* `index.md` explains the app architecture, important folders, APIs, modules, and use cases.
+* `rules.md` explains implementation rules agents must follow when changing app code.
 
-Purpose:
+### 4.2 Required documentation per layer
 
-* Searchable navigation
-* File discovery
-* API discovery
-* Use Case discovery
+Each major layer must include its own:
 
-### Layer rules.md
-
-Purpose:
-
-* Layer-specific implementation guidance
-* Architecture constraints
-* Coding standards
-
----
-
-# Agent Skills
-
-Whenever an agent uses a skill, it must explicitly report the skill name used.
-
----
-
-## Skill: Implement API
-
-Allowed Access:
-
-* Core
-* Use Cases
-* DTOs
-* API
-
-Forbidden Access:
-
-* Infrastructure implementation details
-
----
-
-## Skill: Implement Infrastructure
-
-Allowed Access:
-
-* Core
-* Infrastructure
-
-Forbidden Access:
-
-* API
-* UI
-* Use Cases
-
----
-
-## Skill: Smoke Test
-
-May use:
-
-* API MCP Server
-* Test data
-* Mock services
-
-A successful smoke test must:
-
-### 1. Update API Clients
-
-Regenerate or synchronize API clients if contracts changed.
-
-### 2. Update Documentation
-
-Update:
-
-* Layer `index.md`
-* Project `index.md`
-
-for any architectural changes.
-
-### 3. Commit Changes
-
-Create a commit after successful validation.
-
----
-
-## Skill: Code Generation
-
-Generated code must be organized for discoverability.
-
-Requirements:
-
-* Clear folder ownership
-* Predictable file locations
-* Search-friendly structure
-* Minimal file coupling
-
----
-
-# Handoff Process
-
-Handoffs are temporary coordination documents.
-
----
-
-## Handoff Status
-
-Every handoff must have one of the following statuses:
-
-* Pending
-* Completed
-
-Example:
-
-```md
-Status: Pending
+```text
+layer-root/
+├── index.md
+└── rules.md
 ```
 
-or
+Rules:
 
-```md
-Status: Completed
-```
+* `index.md` is for searching and navigation.
+* `rules.md` is for implementation guidance.
+* Documentation should be updated whenever APIs, use cases, DTOs, infrastructure, or module boundaries change.
 
----
+## 5. Agent Skills
 
-## Archive Rules
+Agents must report the skill names they used every time a skill is used.
+
+Generated code must be separated into appropriate files and folders so it can be indexed and searched reliably.
+
+### 5.1 Implement API Skill
+
+Purpose: implement API/controller changes.
+
+Rules:
+
+* Must not access infrastructure directly.
+* Must call use cases instead of implementing business logic inside controllers.
+* Must use shared DTOs from the module DTO folder.
+* Must update relevant `index.md` files when API routes or contracts change.
+* Must create a backend-to-UI handoff for every API contract change.
+
+### 5.2 Implement Infrastructure Skill
+
+Purpose: implement infrastructure adapters and external service integrations.
+
+Rules:
+
+* May access only core/shared-kernel contracts and infrastructure code.
+* Must implement abstractions/contracts defined in the core or shared kernel.
+* Must not leak provider-specific details into use cases or controllers.
+* Must document any new adapter in the relevant `index.md` and `rules.md` files.
+
+### 5.3 Smoke Test Skill
+
+Purpose: verify that changed functionality works end-to-end.
+
+Use `api-mcp-server/` when needed.
+
+After a successful smoke test, the agent must:
+
+1. Update `api-clients/` if API contracts changed.
+2. Update indexing documentation for each changed layer.
+3. Commit the code.
+
+The smoke test result should clearly state what was tested and whether it passed.
+
+## 6. Handoff Rules
+
+Handoff documents are temporary coordination documents between backend and UI work.
+
+Each handoff must be marked with one of these statuses:
+
+* `Pending`
+* `Completed`
 
 Completed handoffs must be moved to:
 
@@ -419,40 +247,96 @@ Completed handoffs must be moved to:
 handoffs/archive/
 ```
 
----
+### 6.1 Backend-to-UI handoffs
 
-## Backend → UI Handoff
+Every API contract change must create a backend-to-UI handoff.
 
-A backend-to-ui handoff must be created whenever:
+Use this when backend changes affect the UI, such as:
 
-* API contracts change
-* DTOs change
-* Authentication changes
-* API behavior changes
+* New API endpoint
+* Removed API endpoint
+* Changed request DTO
+* Changed response DTO
+* Changed error format
+* Changed authentication behavior
+* Changed pagination, filtering, sorting, or validation behavior
 
----
+Recommended filename pattern:
 
-## UI → Backend Handoff
+```text
+handoffs/backend-to-ui/YYYY-MM-DD-short-description.md
+```
 
-A ui-to-backend handoff must be created whenever:
+### 6.2 UI-to-Backend handoffs
 
-* New backend functionality is required
-* New endpoints are needed
-* Existing APIs require changes
-* Additional data must be exposed
+Every new UI requirement that needs backend support must create a UI-to-backend handoff.
 
----
+Use this when the UI needs backend changes, such as:
 
-# Architecture Principles
+* New endpoint request
+* New field requirement
+* New filtering or search behavior
+* New admin action
+* New validation requirement
+* New data export/import behavior
 
-1. Configuration is user-controlled and UI-editable.
-2. Core owns business rules.
-3. Entities protect their own invariants.
-4. Aggregates protect cross-entity invariants.
-5. Infrastructure is replaceable.
-6. Repository patterns are prohibited.
-7. DTOs are shared across API and Use Cases.
-8. API Clients are generated from App contracts.
-9. Documentation is optimized for AI-agent navigation.
-10. Handoffs provide traceable coordination between teams.
-11. Generated code must remain discoverable and searchable.
+Recommended filename pattern:
+
+```text
+handoffs/ui-to-backend/YYYY-MM-DD-short-description.md
+```
+
+### 6.3 Handoff document template
+
+```md
+# Handoff: <Short Description>
+
+Status: Pending
+Direction: Backend to UI | UI to Backend
+Created: YYYY-MM-DD
+Owner: <Name or Team>
+
+## Summary
+
+Describe the change or request.
+
+## Context
+
+Explain why this handoff exists.
+
+## Contract / Requirement
+
+Describe the API contract, DTO change, UI need, or backend support required.
+
+## Files Changed or Expected
+
+List related files, modules, routes, DTOs, or use cases.
+
+## Acceptance Criteria
+
+- [ ] Requirement is implemented.
+- [ ] API client is updated, if needed.
+- [ ] Relevant `index.md` files are updated.
+- [ ] Relevant `rules.md` files are updated, if needed.
+- [ ] Smoke test passes, if applicable.
+
+## Notes
+
+Add any extra coordination notes here.
+```
+
+## 7. Documentation Update Requirements
+
+Update documentation whenever any of the following changes:
+
+* Folder structure
+* Module boundaries
+* API contracts
+* DTOs
+* Use cases
+* Infrastructure adapters
+* Shared kernel concepts
+* Agent implementation rules
+* Handoff status
+
+Documentation should remain searchable, consistent, and useful for both developers and AI agents.
