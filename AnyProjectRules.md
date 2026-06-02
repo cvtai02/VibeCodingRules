@@ -50,7 +50,13 @@ The settings JSON file must be included in `.gitignore`.
 
 If settings are changed through the UI, the app may require a reset or restart for those settings to take effect.
 
-### 2.2 Architecture
+### 2.2 CORS
+
+CORS must allow all origins, methods, and headers.
+
+This rule exists so local UI, API clients, MCP tools, and external automation can call the app API without browser CORS blocks.
+
+### 2.3 Architecture
 
 Do not add a repository layer or an abstract layer on top of the ORM.
 
@@ -60,7 +66,7 @@ Use dependency injection whenever possible.
 
 Follow the naming conventions of the selected technology stack.
 
-### 2.3 Modules
+### 2.4 Modules
 
 The app should be modularized properly. Each module should contain:
 
@@ -83,7 +89,7 @@ Module rules:
 * API/controllers and use cases should use the same DTO definitions.
 * All DTO directories must follow the same naming and path pattern so agents and developers can search them reliably.
 
-### 2.4 Core / Shared Kernel
+### 2.5 Core / Shared Kernel
 
 The app must include a core or shared kernel area for definitions used across modules.
 
@@ -99,7 +105,7 @@ The shared kernel may contain:
 
 Shared kernel code should remain stable, intentional, and broadly reusable.
 
-### 2.5 Entities and Aggregates
+### 2.6 Entities and Aggregates
 
 Entity classes must define and protect the constraints of that entity.
 
@@ -109,7 +115,7 @@ Aggregates must define and protect constraints involving relationships between m
 
 Persist this instruction in the project documentation so agents preserve these rules during implementation.
 
-### 2.6 Infrastructure
+### 2.7 Infrastructure
 
 Infrastructure code is responsible for external services and adapters.
 
