@@ -74,8 +74,12 @@ module-name/
 Module rules:
 
 * Use cases contain business actions and application logic.
+* Each use case must be defined in its own file.
 * API/controllers expose use cases through HTTP or another API boundary.
+* Each API/controller must be defined in its own file.
 * DTOs must be shared by both API/controllers and use cases.
+* Each DTO must be defined in its own file.
+* When a `usecases/`, `api/` or `controllers/`, or `dtos/` directory contains many files, group related files into descriptive subfolders.
 * API/controllers and use cases should use the same DTO definitions.
 * All DTO directories must follow the same naming and path pattern so agents and developers can search them reliably.
 
