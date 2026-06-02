@@ -2,8 +2,7 @@ I need these features for my new project:
 <your feature here>
 
 
-Give me downloadable markdown plan that will be used by codex/claude to setup the project.
-
 read https://cvtai02.github.io/VibeCodingRules/AnyProjectRules.md
 
-Suggest tech stack to use and ask me any question.
+Suggest and ask for tech stack. Suggest and ask for domain separation. ask any question.
+Eventually give me downloadable markdown plan that will be used by codex/claude to setup the project.

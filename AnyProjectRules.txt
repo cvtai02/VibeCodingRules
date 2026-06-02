@@ -1,9 +1,9 @@
-Refine this to a markdown file:
+Refine this to a  markdown file:
 
 ### Any Project rules:
 - Project contain: 
 	1. app: main bussiness source code that expose apis
-	2. ui: for interact with app api
+	2. ui: admin for interact with app api, configure app settings, use accesstoken for login.
 	3. handoffs: backend handoff updated api for ui, ui handoff needed api changes.
 	2. api-clients: api-clients writen in typescript. (interface + implementation). so that i can copy this to any other app to use, or i can push to npm-packages
 	3. api-mpc-server: can be used for create mock data, fix dirty data, smoke test, ...
@@ -12,33 +12,38 @@ Refine this to a markdown file:
 	5. agents instructions
 
 - App Rules: 
-	- No .env file needed. store all settings in db so that i can update it by UI.
-	- Load settings on startup / after changes
-	- DDD architecture.
-	- No repository layer, ORM will be the core of the app, usecases will use it directly
+	- Store all settings (accesstoken, db, external api, ...) in a json file so that i can view/update it by UI (reset app if needed). *This file must included in gitignore*
+	- No repository layer, no abstract layer upon ORM. ORM context will be in the Core of the app, usecases layer depend on this.
+	- Use dependency injection when possible.
 	- Have a Core folder that define entities, aggregates, enums & constants, policies, abstractions/contracts, ...
 	- Entity Class should define constrants for that entity (by using public, private properties/methods properly)
 	- Aggregates defines constraints for relationship between multi-entity. 
 	
 	- Infrastructure for external services: Database Config, Storage, Api Clients.... that implement abstractions/constract in Core. All infrastructure should be easy to switch by app settings or user favor settings. Ex: SqlLite/Postgresql, R2/GoogleDrive...
 	
-	- Usecases Folder that define usecases only depend on Core
-	- Api Folder for apis
-	- Dtos Folder which is used by both API and Usecases. both use the same dto.
+	- Usecases Layer
+	- Api Layer
+	- Dtos should be used by both API and Usecases. both use the same dto.
 	- All dto file directory should use the same pattern for searching
+
+- API Clients: 
+	- Api dto is sync from App
+	- use native fetch.	
 
 - Setup documentation should included in app/ for AI-agents to read: 
 	- index.md + rules.md. This will the the app architecture for agents to search files/api/usecases/...
 	- index.md + rules.md for each layers stay on the layers root folder, index is used for searching, rules is used for implementing. 
 
 	- Skills:	0. Should output skills name that were used every time they was used.
+			0. Generated code should be separated properly for indexing.
 			1. Implement Api Skill -> Must not access infrastructure
 			2. Implement Infrastructure Skill -> only accessible to Core + Infras
 			3. Smoke test skills (use api-mcp-server if needed, included these if smoke test successfully:
 				a. update api-clients. 
 				b. update indexing.md for each layer changes.
 				c. commit code.
-			4. Generated code should be separated properly for indexing.
+	
+
 	- Handoff documents are temporary coordination documents.
 	- A handoff must be marked as:
   		- Pending
